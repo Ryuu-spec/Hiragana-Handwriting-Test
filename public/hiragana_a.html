@@ -4,43 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>히라가나 AI 트레이너 - あ행</title>
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-    <link href="[https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap](https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap)" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { background-color: #f8fafc; font-family: 'Noto Sans KR', sans-serif; height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; }
-        .canvas-container { background: white; border: 2px solid #e2e8f0; border-radius: 20px; position: relative; width: 100%; aspect-ratio: 4/3; }
-        canvas { width: 100%; height: 100%; touch-action: none; cursor: crosshair; border-radius: 20px; }
-        .score-badge { background: #619bd1; color: white; padding: 2px 8px; border-radius: 6px; font-size: 11px; margin-left: 5px; display: none; }
+        .canvas-container { background: white; border: 2px solid #e2e8f0; border-radius: 24px; position: relative; width: 100%; aspect-ratio: 4/3; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        canvas { width: 100%; height: 100%; touch-action: none; cursor: crosshair; border-radius: 24px; }
+        .score-badge { background: #619bd1; color: white; padding: 2px 10px; border-radius: 8px; font-size: 11px; margin-left: 6px; display: none; font-weight: 700; }
         .score-badge.active { display: inline-block; }
     </style>
 </head>
-<body class="p-4">
-    <div class="w-full max-w-5xl flex flex-col md:flex-row gap-6">
-        <div class="flex-1 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-            <div id="tabs" class="flex gap-2 mb-6"></div>
+<body class="p-4 sm:p-6">
+    <div class="w-full max-w-5xl flex flex-col md:flex-row gap-8">
+        <div class="flex-1 bg-white p-6 sm:p-8 rounded-[32px] shadow-sm border border-slate-100">
+            <div id="tabs" class="flex gap-3 mb-8"></div>
             <div class="canvas-container"><canvas id="canvas"></canvas></div>
-            <div class="flex gap-3 mt-6">
-                <button id="clearBtn" class="flex-1 py-4 bg-slate-50 text-slate-400 font-bold rounded-2xl">다시 쓰기</button>
-                <button id="submitBtn" class="flex-[2] py-4 bg-[#619bd1] text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-3">
-                    <span id="btnText">채점하기</span>
+            <div class="flex gap-4 mt-8">
+                <button id="clearBtn" class="flex-1 py-5 bg-slate-50 text-slate-400 font-bold rounded-2xl hover:bg-slate-100 transition-all active:scale-95 text-sm">다시 쓰기</button>
+                <button id="submitBtn" class="flex-[2.5] py-5 bg-[#619bd1] text-white font-bold rounded-2xl shadow-lg shadow-blue-100 flex items-center justify-center gap-3 hover:bg-[#5088bd] transition-all active:scale-95">
+                    <span id="btnText" class="text-base">채점하기</span>
                     <div id="loader" class="hidden w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                 </button>
             </div>
         </div>
-        <div class="w-full md:w-80 bg-[#f1f7ff] p-8 rounded-3xl border border-blue-50 flex flex-col text-center">
-            <h2 class="text-[10px] font-black text-blue-300 mb-8 tracking-[0.2em] uppercase">AI ANALYSIS RESULT</h2>
-            <div id="idleMsg" class="flex-1 flex flex-col items-center justify-center py-20">
-                <p class="text-xs text-slate-400 leading-relaxed">히라가나를 작성한 후<br>채점 버튼을 눌러주세요.</p>
+
+        <div class="w-full md:w-80 bg-[#f1f7ff] p-8 rounded-[32px] border border-blue-50 flex flex-col items-center justify-center text-center">
+            <h2 class="text-[11px] font-black text-blue-300 mb-10 tracking-[0.25em] uppercase">AI Analysis Result</h2>
+            
+            <div id="idleMsg" class="flex-1 flex flex-col items-center justify-center py-10">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
+                    <span class="text-2xl text-blue-200 font-bold">?</span>
+                </div>
+                <p class="text-[13px] text-slate-400 leading-relaxed font-medium">히라가나를 작성한 후<br><span class="text-blue-400">채점 버튼</span>을 눌러주세요.</p>
             </div>
-            <div id="resultArea" class="hidden flex-1 flex flex-col items-center justify-center">
-                <div class="text-7xl font-black text-[#619bd1] mb-2"><span id="scoreText">0</span><span class="text-2xl ml-1">점</span></div>
-                <div class="bg-white p-5 rounded-2xl text-[13px] text-slate-600 leading-relaxed shadow-sm w-full" id="feedbackText"></div>
+
+            <div id="resultArea" class="hidden flex-1 flex flex-col items-center justify-center w-full">
+                <div class="mb-6">
+                    <span id="scoreText" class="text-8xl font-black text-[#619bd1]">0</span>
+                    <span class="text-2xl font-bold text-[#619bd1] ml-1">점</span>
+                </div>
+                <div class="bg-white p-6 rounded-2xl text-[14px] text-slate-600 leading-relaxed shadow-sm w-full border border-blue-50" id="feedbackText"></div>
             </div>
-            <p id="errorMsg" class="text-red-400 text-[10px] mt-6 h-4 font-medium"></p>
+
+            <p id="errorMsg" class="text-red-400 text-[10px] mt-8 font-medium h-4"></p>
         </div>
     </div>
 
     <script>
+        // (자바스크립트 로직은 이전과 동일하며 주소만 다시 확인합니다)
         const chars = ["あ", "い", "う", "え", "お"];
         let currentTarget = "あ";
         let scores = {};
@@ -48,12 +59,12 @@
         const ctx = canvas.getContext('2d');
         let drawing = false;
 
-        const API_URL = "[https://hiragana-backend.vercel.app/api/score](https://hiragana-backend.vercel.app/api/score)";
+        const API_URL = "https://hiragana-backend.vercel.app/api/score";
 
         function init() {
             const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width; canvas.height = rect.height;
-            ctx.lineCap = 'round'; ctx.lineWidth = 12; ctx.strokeStyle = '#1e293b';
+            ctx.lineCap = 'round'; ctx.lineWidth = 14; ctx.strokeStyle = '#1e293b';
             renderTabs();
         }
 
@@ -62,7 +73,7 @@
             container.innerHTML = '';
             chars.forEach(c => {
                 const btn = document.createElement('button');
-                btn.className = `flex-1 py-4 rounded-2xl border-2 font-bold text-lg transition-all ${c === currentTarget ? 'bg-[#619bd1] border-[#619bd1] text-white shadow-md' : 'bg-white border-slate-50 text-slate-300'}`;
+                btn.className = `flex-1 py-4 rounded-2xl border-2 font-bold text-xl transition-all duration-300 ${c === currentTarget ? 'bg-[#619bd1] border-[#619bd1] text-white shadow-md transform -translate-y-1' : 'bg-white border-slate-50 text-slate-300 hover:border-slate-100'}`;
                 btn.innerHTML = `${c}<span class="score-badge ${scores[c] ? 'active' : ''}">${scores[c]}</span>`;
                 btn.onclick = () => { currentTarget = c; clear(); renderTabs(); };
                 container.appendChild(btn);
@@ -85,10 +96,13 @@
         document.getElementById('clearBtn').onclick = clear;
 
         document.getElementById('submitBtn').onclick = async () => {
-            document.getElementById('loader').classList.remove('hidden');
-            document.getElementById('btnText').innerText = 'AI 분석 중';
-            document.getElementById('errorMsg').innerText = '';
-
+            const btn = document.getElementById('submitBtn');
+            const loader = document.getElementById('loader');
+            const btnText = document.getElementById('btnText');
+            btn.disabled = true;
+            loader.classList.remove('hidden');
+            btnText.innerText = 'AI 채점 중...';
+            
             const imageData = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
             try {
                 const res = await fetch(API_URL, {
@@ -96,9 +110,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ target: currentTarget, imageData })
                 });
-                
                 const result = await res.json();
-                if(!res.ok) throw new Error(result.details || '서버 응답 오류');
+                if(!res.ok) throw new Error(result.details || '분석 오류');
                 
                 scores[currentTarget] = result.score;
                 document.getElementById('scoreText').innerText = result.score;
@@ -107,10 +120,11 @@
                 document.getElementById('resultArea').classList.remove('hidden');
                 renderTabs();
             } catch (e) {
-                document.getElementById('errorMsg').innerText = '오류: ' + e.message;
+                document.getElementById('errorMsg').innerText = '에러: ' + e.message;
             } finally {
-                document.getElementById('loader').classList.add('hidden');
-                document.getElementById('btnText').innerText = '채점하기';
+                btn.disabled = false;
+                loader.classList.add('hidden');
+                btnText.innerText = '채점하기';
             }
         };
 
