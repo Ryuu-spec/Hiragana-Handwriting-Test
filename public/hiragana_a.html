@@ -5,155 +5,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>히라가나 AI 트레이너 - あ행</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; font-family: 'Noto Sans KR', sans-serif; background-color: #f8fafc; height: 100%; }
-        .jp-font { font-family: 'Klee One', 'Noto Sans JP', sans-serif; }
-        .app-container { display: flex; height: 100vh; width: 100%; }
-        .panel { display: flex; flex-direction: column; padding: 30px; height: 100%; }
-        .left-panel { flex: 1.2; background-color: #ffffff; }
-        .right-panel { flex: 0.8; background-color: #f1f7ff; border-left: 1px solid #e2e8f0; }
-        .char-bar { display: flex; gap: 12px; margin-bottom: 30px; padding-top: 20px; }
-        .char-item { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; }
-        .score-badge { position: absolute; top: -24px; background: #619bd1; color: white; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 8px; opacity: 0; visibility: hidden; transition: all 0.3s; transform: translateY(10px); z-index: 10; }
-        .score-badge.visible { opacity: 1; visibility: visible; transform: translateY(0); }
-        .char-btn { width: 100%; height: 65px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 600; border-radius: 16px; border: 2px solid #f1f5f9; background: #ffffff; color: #94a3b8; transition: all 0.2s; }
-        .char-btn.active { background-color: #619bd1; color: white; border-color: #619bd1; }
-        .canvas-area { flex: 1; background: #ffffff; border: 2px solid #f1f5f9; border-radius: 24px; position: relative; overflow: hidden; }
-        #drawing-canvas { cursor: crosshair; touch-action: none; width: 100%; height: 100%; }
-        .result-card { background: white; border-radius: 24px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; width: 100%; border: 1px solid #e2e8f0; }
-        .feedback-box { margin-top: 25px; padding: 20px; background: #f8fafc; border-radius: 16px; width: 100%; text-align: center; }
+        body { background-color: #f8fafc; font-family: 'Noto Sans KR', sans-serif; }
+        .canvas-container { background: white; border: 2px solid #e2e8f0; border-radius: 20px; position: relative; aspect-ratio: 4/3; }
+        canvas { width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+        .score-badge { background: #619bd1; color: white; padding: 2px 8px; border-radius: 6px; font-size: 12px; display: none; }
+        .score-badge.active { display: block; }
     </style>
 </head>
-<body>
-    <div class="app-container">
-        <section class="panel left-panel">
-            <div id="char-selection" class="char-bar jp-font"></div>
-            <div class="canvas-area"><canvas id="drawing-canvas"></canvas></div>
-            <div class="mt-8 flex gap-4">
-                <button id="clear-btn" class="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl text-sm hover:bg-slate-200">다시 쓰기</button>
-                <button id="submit-btn" class="flex-[1.8] py-4 bg-[#619bd1] text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-3 text-sm hover:bg-[#5088bd]">
-                    <span id="btn-text">채점하기</span>
+<body class="p-4 sm:p-8">
+    <div class="max-w-4xl mx-auto flex flex-col md:flex-row gap-6">
+        <div class="flex-1">
+            <div id="tabs" class="flex gap-2 mb-4"></div>
+            <div class="canvas-container"><canvas id="canvas"></canvas></div>
+            <div class="flex gap-3 mt-4">
+                <button id="clearBtn" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold">다시 쓰기</button>
+                <button id="submitBtn" class="flex-[2] py-3 bg-blue-500 text-white rounded-xl font-bold flex items-center justify-center gap-2">
+                    <span id="btnText">채점하기</span>
                     <div id="loader" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 </button>
             </div>
-        </section>
-        <section class="panel right-panel">
-            <div id="result-container" class="result-card">
-                <div id="view-idle" class="flex flex-col items-center">
-                    <p class="text-xs text-slate-400 font-medium text-center leading-relaxed">히라가나를 작성한 후<br>채점 버튼을 눌러주세요.</p>
-                </div>
-                <div id="view-result" class="hidden w-full flex flex-col items-center">
-                    <div class="flex items-baseline gap-1"><span id="score-val" class="text-7xl font-black text-[#619bd1]">0</span><span class="text-2xl font-bold text-[#619bd1]">점</span></div>
-                    <div class="feedback-box"><p id="feedback-text" class="text-[13px] text-slate-600 font-medium leading-relaxed"></p></div>
-                </div>
+        </div>
+        <div class="w-full md:w-72 bg-blue-50 p-6 rounded-2xl border border-blue-100">
+            <h2 class="text-sm font-bold text-blue-400 mb-6 tracking-widest uppercase text-center">AI Analysis Result</h2>
+            <div id="idleMsg" class="text-center py-20 text-gray-400 text-sm leading-relaxed">히라가나를 작성한 후<br>채점 버튼을 눌러주세요.</div>
+            <div id="resultArea" class="hidden text-center">
+                <div class="text-6xl font-black text-blue-500 mb-2"><span id="scoreText">0</span><span class="text-xl">점</span></div>
+                <div class="bg-white p-4 rounded-xl text-sm text-gray-600 leading-relaxed shadow-sm" id="feedbackText"></div>
             </div>
-            <div class="mt-auto pt-8 text-center"><p id="error-log" class="text-red-400 text-[10px] mb-4 h-4 font-medium px-4"></p></div>
-        </section>
+            <p id="errorMsg" class="text-red-500 text-[10px] mt-4 text-center"></p>
+        </div>
     </div>
 
     <script>
-        const displayChars = ["あ", "い", "う", "え", "お"];
+        const chars = ["あ", "い", "う", "え", "お"];
         let currentTarget = "あ";
-        let hasDrawn = false;
-        let isProcessing = false;
-        let charScores = { "あ": null, "い": null, "う": null, "え": null, "お": null };
+        let scores = {};
 
-        const canvas = document.getElementById('drawing-canvas');
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        let isDrawing = false;
+        let drawing = false;
 
-        function initCanvas() {
-            const rect = canvas.getBoundingClientRect();
+        // ✅ 백엔드가 배포된 프로젝트의 실제 주소를 입력해야 합니다!
+        const API_URL = "https://hiragana-backend.vercel.app/api/score";
+
+        function init() {
+            const rect = canvas.parentNode.getBoundingClientRect();
             canvas.width = rect.width; canvas.height = rect.height;
             ctx.lineCap = 'round'; ctx.lineWidth = 10; ctx.strokeStyle = '#1e293b';
-            ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            renderTabs();
         }
-
-        window.addEventListener('load', () => { initCanvas(); renderTabs(); });
 
         function renderTabs() {
-            const container = document.getElementById('char-selection');
+            const container = document.getElementById('tabs');
             container.innerHTML = '';
-            displayChars.forEach(c => {
-                const item = document.createElement('div');
-                item.className = 'char-item';
-                const badge = document.createElement('div');
-                badge.className = `score-badge ${charScores[c] !== null ? 'visible' : ''}`;
-                badge.innerText = charScores[c] !== null ? `${charScores[c]}점` : '';
+            chars.forEach(c => {
                 const btn = document.createElement('button');
-                btn.className = `char-btn ${c === currentTarget ? 'active' : ''}`;
-                btn.innerText = c;
-                btn.onclick = () => { if(isProcessing) return; currentTarget = c; clearCanvas(); renderTabs(); };
-                item.appendChild(badge); item.appendChild(btn); container.appendChild(item);
+                btn.className = `flex-1 py-3 rounded-xl border-2 font-bold transition-all ${c === currentTarget ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white border-gray-100 text-gray-300'}`;
+                btn.innerHTML = `${c} <span class="score-badge ${scores[c] ? 'active' : ''}">${scores[c]}</span>`;
+                btn.onclick = () => { currentTarget = c; clear(); renderTabs(); };
+                container.appendChild(btn);
             });
-        }
-
-        function clearCanvas() {
-            ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            hasDrawn = false;
-            document.getElementById('view-idle').classList.remove('hidden');
-            document.getElementById('view-result').classList.add('hidden');
-            document.getElementById('error-log').innerText = '';
         }
 
         const getPos = (e) => {
             const rect = canvas.getBoundingClientRect();
-            const cx = e.touches ? e.touches[0].clientX : e.clientX;
-            const cy = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: cx - rect.left, y: cy - rect.top };
+            const ev = e.touches ? e.touches[0] : e;
+            return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
         };
 
-        canvas.addEventListener('mousedown', (e) => { if(isProcessing) return; isDrawing = true; hasDrawn = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
-        canvas.addEventListener('mousemove', (e) => { if(!isDrawing || isProcessing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
-        window.addEventListener('mouseup', () => isDrawing = false);
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); if(isProcessing) return; isDrawing = true; hasDrawn = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, {passive: false});
-        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if(!isDrawing || isProcessing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }, {passive: false});
-        canvas.addEventListener('touchend', () => isDrawing = false);
+        canvas.addEventListener('mousedown', (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+        canvas.addEventListener('mousemove', (e) => { if(!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+        window.addEventListener('mouseup', () => drawing = false);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if(!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 
-        // ✅ 백엔드 주소 자동 매칭 (가장 안전한 방법)
-        const SERVER_URL = window.location.origin + "/api/score";
+        function clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); document.getElementById('idleMsg').classList.remove('hidden'); document.getElementById('resultArea').classList.add('hidden'); }
+        document.getElementById('clearBtn').onclick = clear;
 
-        async function performAiAnalysis() {
-            if(!hasDrawn || isProcessing) return;
-            isProcessing = true;
+        document.getElementById('submitBtn').onclick = async () => {
             document.getElementById('loader').classList.remove('hidden');
-            document.getElementById('btn-text').innerText = '분석 중...';
-            document.getElementById('error-log').innerText = '';
-
-            const imageData = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-
+            document.getElementById('btnText').innerText = '채점 중...';
+            
+            const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
             try {
-                const response = await fetch(SERVER_URL, {
+                const res = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ target: currentTarget, imageData })
                 });
+                const result = await res.json();
+                if(!res.ok) throw new Error(result.details || '서버 응답 실패');
                 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText.includes('page could not be found') ? '서버 연결 실패 (URL 오류)' : 'AI 응답 오류');
-                }
-
-                const result = await response.json();
-                charScores[currentTarget] = result.score;
-                document.getElementById('score-val').innerText = result.score;
-                document.getElementById('feedback-text').innerText = result.feedback;
-                document.getElementById('view-idle').classList.add('hidden');
-                document.getElementById('view-result').classList.remove('hidden');
+                scores[currentTarget] = result.score;
+                document.getElementById('scoreText').innerText = result.score;
+                document.getElementById('feedbackText').innerText = result.feedback;
+                document.getElementById('idleMsg').classList.add('hidden');
+                document.getElementById('resultArea').classList.remove('hidden');
                 renderTabs();
-            } catch (err) {
-                console.error(err);
-                document.getElementById('error-log').innerText = '오류: ' + err.message;
+            } catch (e) {
+                document.getElementById('errorMsg').innerText = e.message;
             } finally {
-                isProcessing = false;
                 document.getElementById('loader').classList.add('hidden');
-                document.getElementById('btn-text').innerText = '채점하기';
+                document.getElementById('btnText').innerText = '채점하기';
             }
-        }
+        };
 
-        document.getElementById('submit-btn').onclick = performAiAnalysis;
-        document.getElementById('clear-btn').onclick = clearCanvas;
+        window.onload = init;
     </script>
 </body>
 </html>
