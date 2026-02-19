@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>히라가나 AI 트레이너 - あ행</title>
+    <title>히라가나 AI 트레이너</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -215,6 +215,9 @@
     </div>
 
     <script>
+        // 백엔드 서버 URL
+        const serverUrl = "https://hiragana-backend.vercel.app/api/score";
+        
         const displayChars = ["あ", "い", "う", "え", "お"];
         let currentTarget = "あ";
         let hasDrawn = false;
@@ -370,9 +373,6 @@
             return tempCanvas.toDataURL('image/jpeg', 0.6).split(',')[1];
         }
 
-        // ✅ Vercel 백엔드 서버 URL (여기를 본인의 URL로 변경하세요!)
-        const SERVER_URL = "https://hiragana-backend.vercel.app/api/score";
-
         async function performAiAnalysis() {
             if(!hasDrawn || isProcessing) {
                 if(!hasDrawn) document.getElementById('error-log').innerText = '글자를 먼저 써주세요.';
@@ -391,17 +391,17 @@
             const base64Image = getOptimizedImageData();
 
             try {
-                // ✅ Vercel 백엔드로 요청 (여러 API 키 자동 순환)
-                const response = await fetch(SERVER_URL, {
+                // 백엔드 서버로 요청
+                const response = await fetch(serverUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        target: currentTarget,      // 채점할 히라가나
-                        imageData: base64Image      // Base64 이미지
+                        target: currentTarget,
+                        imageData: base64Image
                     })
                 });
                 
-                if (!response.ok) throw new Error('API_ERR');
+                if (!response.ok) throw new Error('서버 오류');
                 const result = await response.json();
                 
                 charScores[currentTarget] = result.score;
@@ -413,7 +413,7 @@
                 
                 displayResult(result.score, result.feedback);
             } catch (err) {
-                console.error('채점 오류:', err);
+                console.error('Error:', err);
                 document.getElementById('error-log').innerText = '연결이 지연되고 있습니다. 다시 시도해주세요.';
             } finally {
                 isProcessing = false;
