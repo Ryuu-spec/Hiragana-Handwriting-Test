@@ -558,25 +558,40 @@ async function scoreWriting() {
 }
 
 async function callGemini(imgB64, strokeOrderScore) {
-  const res = await fetch('/api/gemini', {
+  const res = await fetch('https://hiragana-backend.vercel.app/api/score', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      char: current.char,
+      target: current.char,
+      imageData: imgB64,
       romaji: current.romaji,
       strokes: strokes.length,
       expectedStrokes: current.strokes,
-      strokeOrderScore,
-      image: imgB64
+      strokeOrderScore
     })
   });
 
   if (!res.ok) {
-    const e = await res.json();
-    throw new Error(e.error || `HTTP ${res.status}`);
+    throw new Error('서버 오류');
   }
 
-  const parsed = await res.json();
+  const result = await res.json();
+  // 기존 백엔드 응답(score, feedback)을 내부 형식으로 변환
+  const parsed = {
+    grade: result.score >= 90 ? 'A' : result.score >= 80 ? 'B' : result.score >= 70 ? 'C' : 'D',
+    total: result.score,
+    scores: {
+      '형태정확성': Math.round(result.score * 0.35),
+      '필순': strokeOrderScore,
+      '획방향': Math.round(result.score * 0.20),
+      '끝맺음': Math.round(result.score * 0.10),
+      '균형비율': Math.round(result.score * 0.10),
+    },
+    overall: result.feedback,
+    errors: [],
+    tips: [],
+    korean_pattern: null
+  };
   // 필순 점수 강제 고정
   if (parsed.scores) parsed.scores['필순'] = strokeOrderScore;
   parsed.total = Object.values(parsed.scores).reduce((a,b)=>a+b,0);
