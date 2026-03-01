@@ -183,8 +183,7 @@
         .spinner.on { display: block; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── RIGHT PANEL ──
-           왼쪽과 동일한 padding/gap 사용 → 요소들이 픽셀 단위로 정렬됨 */
+        /* ── RIGHT PANEL ── */
         .right-panel {
             flex: 0.85;
             display: flex;
@@ -196,12 +195,13 @@
             overflow: hidden;
         }
 
-        /* ① char-bar와 완전히 동일한 높이 블록 */
+        /* char-bar 영역 높이 미러:
+           padding-top(10) + char-item padding-top(28) + char-btn(62) = 100px */
         .right-charbar-mirror {
-            min-height: calc(10px + 28px + 62px);
+            height: 100px;
+            flex-shrink: 0;
         }
 
-        /* ② board-label과 동일한 위치/스타일 */
         .panel-label {
             font-size: 9px;
             font-weight: 900;
@@ -209,9 +209,10 @@
             letter-spacing: 0.4em;
             text-transform: uppercase;
             text-align: center;
+            flex-shrink: 0;
         }
 
-        /* ② canvas-wrap과 동일하게 flex:1, 같은 border/radius */
+        /* canvas-wrap과 동일하게 flex:1 */
         .result-card {
             flex: 1;
             background: white;
@@ -221,7 +222,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow-y: auto;
+            overflow: hidden;
         }
 
         /* 빈 상태 — 카드 정중앙 */
@@ -247,12 +248,12 @@
         }
 
         /* 결과 뷰 */
-        .result-view { display: none; width: 100%; padding: 28px 24px; }
-        .result-view.on { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .result-view { display: none; width: 100%; padding: 20px 22px; overflow-y: auto; }
+        .result-view.on { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 
         .grade-display { text-align: center; }
         .grade-letter {
-            font-size: 64px;
+            font-size: 54px;
             font-weight: 900;
             line-height: 1;
             font-family: 'DM Mono', monospace;
@@ -263,11 +264,11 @@
         .grade-letter.D { color: #e05555; }
         .score-num {
             font-family: 'DM Mono', monospace;
-            font-size: 14px; color: #94a3b8; margin-top: 4px;
+            font-size: 13px; color: #94a3b8; margin-top: 2px;
         }
 
         /* 루브릭 바 */
-        .rubric-list { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+        .rubric-list { width: 100%; display: flex; flex-direction: column; gap: 8px; }
         .rubric-item {}
         .rubric-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
         .rubric-name { font-size: 12px; font-weight: 700; color: #475569; }
@@ -292,7 +293,7 @@
             color: #475569;
         }
 
-        /* ③ btn-row와 같은 높이 블록 */
+        /* ③ error log */
         .right-btnrow-mirror {
             display: flex;
             align-items: center;
@@ -345,17 +346,14 @@
 
     <!-- 오른쪽: 결과 -->
     <section class="right-panel">
-        <!-- ① char-bar 높이 spacer (레이블 없음) -->
         <div class="right-charbar-mirror"></div>
-
-        <!-- ② board-label과 동일한 위치에 AI Analysis Result -->
         <div class="panel-label">AI Analysis Result</div>
 
         <!-- ② canvas-wrap 위치 미러 — 결과 카드 -->
         <div class="result-card">
             <div class="empty-state" id="empty-state">
-                <div class="empty-circle">?</div>
-                <div class="empty-text">히라가나를 작성한 후<br>채점 버튼을 눌러주세요.</div>
+                <div class="empty-circle" id="empty-icon">?</div>
+                <div class="empty-text" id="empty-text">히라가나를 작성한 후<br>채점 버튼을 눌러주세요.</div>
             </div>
 
             <div class="result-view" id="result-view">
@@ -553,6 +551,13 @@ document.getElementById('score-btn').onclick = async () => {
     document.getElementById('spinner').classList.add('on');
     document.getElementById('error-log').textContent = '';
 
+    // 로딩 상태를 empty-state에 표시
+    document.getElementById('empty-icon').textContent = '✦';
+    document.getElementById('empty-icon').style.fontSize = '22px';
+    document.getElementById('empty-text').innerHTML = 'AI가 분석 중입니다...<br><span style="font-size:11px;color:#c8d9ee">Gemini 분석에 5~10초 소요됩니다</span>';
+    document.getElementById('empty-state').style.display = 'flex';
+    document.getElementById('result-view').classList.remove('on');
+
     const strokeOrderScore = scoreStrokeOrder();
     const imgB64 = getImageData();
 
@@ -565,17 +570,15 @@ document.getElementById('score-btn').onclick = async () => {
         if (!res.ok) throw new Error('서버 오류');
         const data = await res.json();
 
-        const total = data.score;
-        const remain = total - strokeOrderScore;
         const r = {
-            total,
-            grade: total >= 90 ? 'A' : total >= 80 ? 'B' : total >= 70 ? 'C' : 'D',
+            total: data.score,
+            grade: data.score >= 90 ? 'A' : data.score >= 80 ? 'B' : data.score >= 70 ? 'C' : 'D',
             scores: {
-                '형태정확성': Math.round(remain * 0.50),
+                '형태정확성': data.형태정확성 ?? 0,
                 '필순':       strokeOrderScore,
-                '획방향':     Math.round(remain * 0.30),
-                '끝맺음':     Math.round(remain * 0.12),
-                '균형비율':   Math.round(remain * 0.08),
+                '획방향':     data.획방향 ?? 0,
+                '끝맺음':     data.끝맺음 ?? 0,
+                '균형비율':   data.균형비율 ?? 0,
             },
             overall: data.feedback,
         };
@@ -588,6 +591,9 @@ document.getElementById('score-btn').onclick = async () => {
         btn.disabled = false;
         document.getElementById('btn-text').textContent = '채점하기';
         document.getElementById('spinner').classList.remove('on');
+        document.getElementById('empty-icon').textContent = '?';
+        document.getElementById('empty-icon').style.fontSize = '';
+        document.getElementById('empty-text').innerHTML = '히라가나를 작성한 후<br>채점 버튼을 눌러주세요.';
     }
 };
 
