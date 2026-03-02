@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>히라가나 AI 트레이너 - あ행</title>
+    <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body, html {
+            overflow: hidden;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f1f7ff;
+            height: 100%;
+        }
+
+        .jp-font { font-family: 'Klee One', 'Noto Sans JP', sans-serif; }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* ── LEFT PANEL ── */
+        .left-panel {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            padding: 28px 28px 24px;
+            background: #ffffff;
+            gap: 16px;
+        }
+
+        /* 문자 선택 탭 */
+        .char-bar {
+            display: flex;
+            gap: 10px;
+            padding-top: 10px;
+        }
+
+        .char-item {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 28px;
+        }
+
+        .score-badge {
+            position: absolute;
+            top: 0;
+            background: #619bd1;
+            color: white;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: translateY(6px);
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(97,155,209,0.35);
+            font-family: 'DM Mono', monospace;
+        }
+        .score-badge.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .score-badge.grade-a { background: #619bd1; }
+        .score-badge.grade-b { background: #3a9e72; }
+        .score-badge.grade-c { background: #f0a500; }
+        .score-badge.grade-d { background: #e07a2f; }
+        .score-badge.grade-e { background: #e05555; }
+
+        .char-btn {
+            width: 100%;
+            height: 62px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 600;
+            border-radius: 16px;
+            border: 2px solid #e8f0fe;
+            background: #f8fbff;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Klee One', 'Noto Sans JP', sans-serif;
+        }
+        .char-btn:hover { border-color: #619bd1; color: #619bd1; }
+        .char-btn.active {
+            background: #619bd1;
+            color: white;
+            border-color: #619bd1;
+            box-shadow: 0 8px 20px rgba(97,155,209,0.3);
+        }
+
+        /* 레이블 공통 */
+        .board-label {
+            text-align: center;
+            font-size: 9px;
+            font-weight: 900;
+            color: #cbd5e1;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+        }
+
+        /* 캔버스 */
+        .canvas-wrap {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+            border: 2px solid #e8f0fe;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 10px rgba(97,155,209,0.05);
+        }
+        #guide-canvas {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 1;
+        }
+        #drawing-canvas {
+            position: relative; z-index: 2;
+            cursor: crosshair;
+            touch-action: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 버튼 행 */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+        }
+        .btn-clear {
+            flex: 1;
+            padding: 16px;
+            background: #f1f5f9;
+            color: #64748b;
+            font-weight: 700;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-clear:hover { background: #e2e8f0; }
+        .btn-score {
+            flex: 1.8;
+            padding: 16px;
+            background: #619bd1;
+            color: white;
+            font-weight: 700;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 8px 20px rgba(97,155,209,0.3);
+        }
+        .btn-score:hover { background: #5088bd; transform: translateY(-1px); }
+        .btn-score:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        .spinner.on { display: block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .loading-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 8px;
+            width: 100%;
+            max-width: 240px;
+        }
+        .loading-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #a0b4cc;
+            opacity: 0;
+            transition: opacity 0.4s, color 0.4s;
+        }
+        .loading-step.active {
+            opacity: 1;
+            color: #5b8fc9;
+            animation: fadeInUp 0.4s ease;
+            font-weight: 600;
+        }
+        .loading-step.done {
+            opacity: 1;
+            color: #7dc67e;
+        }
+        .step-icon { font-size: 15px; width: 20px; text-align: center; }
+        .loading-bar-wrap {
+            width: 100%;
+            max-width: 240px;
+            height: 4px;
+            background: #dce8f5;
+            border-radius: 99px;
+            margin-top: 14px;
+            overflow: hidden;
+        }
+        .loading-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #619bd1, #7dc67e);
+            border-radius: 99px;
+            transition: width 0.8s ease;
+        }
+
+        /* ── RIGHT PANEL ── */
+        .right-panel {
+            flex: 0.85;
+            display: flex;
+            flex-direction: column;
+            padding: 28px 28px 24px;
+            background: #f1f7ff;
+            border-left: 1px solid #e2eeff;
+            gap: 16px;
+            overflow: hidden;
+        }
+
+        /* char-bar 영역 높이 미러:
+           padding-top(10) + char-item padding-top(28) + char-btn(62) = 100px */
+        .right-charbar-mirror {
+            height: 100px;
+            flex-shrink: 0;
+        }
+
+        .panel-label {
+            font-size: 9px;
+            font-weight: 900;
+            color: #619bd1;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* canvas-wrap과 동일하게 flex:1 */
+        .result-card {
+            flex: 1;
+            background: white;
+            border: 2px solid #e8f0fe;
+            border-radius: 24px;
+            box-shadow: inset 0 2px 10px rgba(97,155,209,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* 빈 상태 — 카드 정중앙 */
+        .empty-state {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+        .empty-circle {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            border: 2px dashed #c8d9ee;
+            display: flex; align-items: center; justify-content: center;
+            color: #c8d9ee; font-size: 26px; font-weight: 700;
+        }
+        .empty-text {
+            font-size: 12px; color: #94a3b8;
+            text-align: center; line-height: 1.8;
+        }
+
+        /* 결과 뷰 */
+        .result-view { display: none; width: 100%; padding: 20px 22px; overflow-y: auto; }
+        .result-view.on { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+        .grade-display { text-align: center; }
+        .grade-letter {
+            font-size: 54px;
+            font-weight: 900;
+            line-height: 1;
+            font-family: 'DM Mono', monospace;
+        }
+        .grade-letter.A { color: #619bd1; }
+        .grade-letter.B { color: #3a9e72; }
+        .grade-letter.C { color: #f0a500; }
+        .grade-letter.D { color: #e07a2f; }
+        .grade-letter.E { color: #e05555; }
+        .score-num {
+            font-family: 'DM Mono', monospace;
+            font-size: 13px; color: #94a3b8; margin-top: 2px;
+        }
+
+        /* 루브릭 바 */
+        .rubric-list { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .rubric-item {}
+        .rubric-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .rubric-name { font-size: 12px; font-weight: 700; color: #475569; }
+        .rubric-val { font-family: 'DM Mono', monospace; font-size: 11px; color: #94a3b8; }
+        .bar-bg { height: 6px; background: #e8f0fe; border-radius: 3px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+
+        /* 피드백 */
+        .feedback-section { width: 100%; }
+        .feedback-label {
+            font-size: 9px; font-weight: 900; color: #619bd1;
+            letter-spacing: 0.3em; text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .feedback-card {
+            background: #f8fbff;
+            border-left: 3px solid #619bd1;
+            border-radius: 0 12px 12px 0;
+            padding: 12px 14px;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #475569;
+        }
+
+        /* ③ error log */
+        .right-btnrow-mirror {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(16px * 2 + 21px); /* padding 상하 + 글씨 */
+        }
+
+        .error-log {
+            font-size: 11px;
+            color: #e05555;
+            text-align: center;
+        }
+
+        .bottom-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: #cbd5e1;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+
+    <!-- 왼쪽: 캔버스 -->
+    <section class="left-panel">
+        <!-- ① char-bar -->
+        <div id="char-bar" class="char-bar jp-font"></div>
+
+        <!-- board-label -->
+        <div class="board-label">Practice Board</div>
+
+        <!-- ② canvas-wrap -->
+        <div class="canvas-wrap">
+            <canvas id="guide-canvas"></canvas>
+            <canvas id="drawing-canvas"></canvas>
+        </div>
+
+        <!-- ③ btn-row -->
+        <div class="btn-row">
+            <button class="btn-clear" id="clear-btn">다시 쓰기</button>
+            <button class="btn-score" id="score-btn">
+                <span id="btn-text">채점하기</span>
+                <div class="spinner" id="spinner"></div>
+            </button>
+        </div>
+    </section>
+
+    <!-- 오른쪽: 결과 -->
+    <section class="right-panel">
+        <div class="right-charbar-mirror"></div>
+        <div class="panel-label">AI Analysis Result</div>
+
+        <!-- ② canvas-wrap 위치 미러 — 결과 카드 -->
+        <div class="result-card">
+            <div class="empty-state" id="empty-state">
+                <div class="empty-circle" id="empty-icon">?</div>
+                <div class="empty-text" id="empty-text">히라가나를 작성한 후<br>채점 버튼을 눌러주세요.</div>
+                <div class="loading-steps" id="loading-steps" style="display:none;">
+                    <div class="loading-step" id="step-1"><span class="step-icon">✏️</span> 획 구조 분석 중...</div>
+                    <div class="loading-step" id="step-2"><span class="step-icon">🔍</span> 필순·방향 검토 중...</div>
+                    <div class="loading-step" id="step-3"><span class="step-icon">⚖️</span> 균형·비율 측정 중...</div>
+                    <div class="loading-step" id="step-4"><span class="step-icon">📊</span> 최종 점수 계산 중...</div>
+                </div>
+                <div class="loading-bar-wrap" id="loading-bar-wrap" style="display:none;">
+                    <div class="loading-bar-fill" id="loading-bar-fill"></div>
+                </div>
+            </div>
+
+            <div class="result-view" id="result-view">
+                <div class="grade-display">
+                    <div class="grade-letter" id="grade-el">A</div>
+                    <div class="score-num" id="score-el">92 / 100</div>
+                </div>
+                <div class="rubric-list" id="rubric-el"></div>
+                <div class="feedback-section">
+                    <div class="feedback-label">AI Feedback</div>
+                    <div class="feedback-card" id="feedback-el"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ③ btn-row 높이 미러 + error -->
+        <div class="right-btnrow-mirror">
+            <div class="error-log" id="error-log"></div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+const SERVER_URL = "https://hiragana-backend.vercel.app/api/score";
+
+const CHARS = [{"char": "あ", "romaji": "a", "strokes": 3}, {"char": "い", "romaji": "i", "strokes": 2}, {"char": "う", "romaji": "u", "strokes": 2}, {"char": "え", "romaji": "e", "strokes": 2}, {"char": "お", "romaji": "o", "strokes": 3}];
+
+const STROKE_RULES = {"あ": [{"label": "1획", "xDir": 1, "yDir": 0, "startSide": "top-left"}, {"label": "2획", "xDir": 0, "yDir": 1, "startSide": "top-center"}, {"label": "3획", "xDir": -0.5, "yDir": 0.5, "startSide": "top-right"}], "い": [{"label": "1획", "xDir": 0.2, "yDir": 1, "startSide": "top-left"}, {"label": "2획", "xDir": -0.3, "yDir": 1, "startSide": "top-right"}], "う": [{"label": "1획", "xDir": 0.5, "yDir": 0.2, "startSide": "top-center"}, {"label": "2획", "xDir": -0.5, "yDir": 0.5, "startSide": "top-right"}], "え": [{"label": "1획", "xDir": 1, "yDir": 0, "startSide": "top-left"}, {"label": "2획", "xDir": -0.3, "yDir": 1, "startSide": "top-center"}], "お": [{"label": "1획", "xDir": 1, "yDir": 0, "startSide": "top-left"}, {"label": "2획", "xDir": 0, "yDir": 1, "startSide": "top-center"}, {"label": "3획", "xDir": -0.5, "yDir": 0.5, "startSide": "top-right"}]};
+
+let current      = CHARS[0];
+let strokes      = [];
+let curStroke    = [];
+let isDrawing    = false;
+let isProcessing = false;
+let hasDrawn     = false;
+let charScores   = {};
+
+window.addEventListener('DOMContentLoaded', () => {
+    buildTabs();
+    initCanvas();
+    selectChar(CHARS[0]);
+});
+
+function buildTabs() {
+    const bar = document.getElementById('char-bar');
+    bar.innerHTML = '';
+    CHARS.forEach(cd => {
+        const item = document.createElement('div');
+        item.className = 'char-item';
+        const badge = document.createElement('div');
+        badge.className = 'score-badge';
+        badge.id = 'badge-' + cd.char;
+        const btn = document.createElement('button');
+        btn.className = 'char-btn' + (cd.char === current.char ? ' active' : '');
+        btn.id = 'cbtn-' + cd.char;
+        btn.textContent = cd.char;
+        btn.onclick = () => { if (!isProcessing) selectChar(cd); };
+        item.append(badge, btn);
+        bar.appendChild(item);
+    });
+}
+
+function selectChar(cd) {
+    current = cd;
+    document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('cbtn-' + cd.char);
+    if (btn) btn.classList.add('active');
+    clearCanvas();
+    resetResult();
+    drawGuide();
+    if (charScores[cd.char]) showResult(charScores[cd.char]);
+}
+
+function initCanvas() {
+    const dc   = document.getElementById('drawing-canvas');
+    const gc   = document.getElementById('guide-canvas');
+    const wrap = dc.parentElement;
+    function resize() {
+        const w = wrap.clientWidth;
+        const h = wrap.clientHeight;
+        dc.width = w; dc.height = h;
+        gc.width = w; gc.height = h;
+        clearDraw();
+        drawGuide();
+    }
+    resize();
+    new ResizeObserver(resize).observe(wrap);
+    dc.addEventListener('mousedown',  e => startDraw(e));
+    dc.addEventListener('mousemove',  e => contDraw(e));
+    dc.addEventListener('mouseup',    () => endDraw());
+    dc.addEventListener('mouseleave', () => endDraw());
+    dc.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e.touches[0]); }, { passive: false });
+    dc.addEventListener('touchmove',  e => { e.preventDefault(); contDraw(e.touches[0]); },  { passive: false });
+    dc.addEventListener('touchend',   e => { e.preventDefault(); endDraw(); },                { passive: false });
+}
+
+function getXY(e) {
+    const dc = document.getElementById('drawing-canvas');
+    const r  = dc.getBoundingClientRect();
+    return {
+        x: (e.clientX - r.left) * (dc.width  / r.width),
+        y: (e.clientY - r.top)  * (dc.height / r.height),
+    };
+}
+
+function startDraw(e) {
+    if (isProcessing) return;
+    isDrawing = true; hasDrawn = true;
+    curStroke = [getXY(e)];
+}
+function endDraw() {
+    if (!isDrawing) return;
+    isDrawing = false;
+    if (curStroke.length > 1) strokes.push([...curStroke]);
+    curStroke = [];
+}
+function contDraw(e) {
+    if (!isDrawing || isProcessing) return;
+    const pos = getXY(e);
+    const dc  = document.getElementById('drawing-canvas');
+    const ctx = dc.getContext('2d');
+    if (curStroke.length) {
+        const prev = curStroke[curStroke.length - 1];
+        ctx.beginPath();
+        ctx.moveTo(prev.x, prev.y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth   = 6;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+        ctx.stroke();
+    }
+    curStroke.push(pos);
+}
+
+function clearDraw() {
+    const dc = document.getElementById('drawing-canvas');
+    dc.getContext('2d').clearRect(0, 0, dc.width, dc.height);
+}
+
+function clearCanvas() {
+    clearDraw();
+    strokes = []; curStroke = []; hasDrawn = false;
+    document.getElementById('error-log').textContent = '';
+}
+
+function drawGuide() {
+    const gc  = document.getElementById('guide-canvas');
+    const ctx = gc.getContext('2d');
+    ctx.clearRect(0, 0, gc.width, gc.height);
+    ctx.setLineDash([6, 5]);
+    ctx.strokeStyle = 'rgba(97,155,209,0.2)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(0, gc.height/2); ctx.lineTo(gc.width, gc.height/2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gc.width/2, 0);  ctx.lineTo(gc.width/2, gc.height); ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function analyzeStroke(pts) {
+    if (pts.length < 2) return null;
+    const dx = pts[pts.length-1].x - pts[0].x;
+    const dy = pts[pts.length-1].y - pts[0].y;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    return { nx: dx/len, ny: dy/len, startX: pts[0].x, startY: pts[0].y };
+}
+
+function scoreStrokeOrder() {
+    const rules    = STROKE_RULES[current.char];
+    const expected = rules ? rules.length : current.strokes;
+    if (strokes.length !== expected) {
+        return Math.max(0, 25 - Math.abs(strokes.length - expected) * 8);
+    }
+    if (!rules) return 25;
+    let score = 25;
+    strokes.forEach((pts, i) => {
+        const rule = rules[i];
+        const vec  = analyzeStroke(pts);
+        if (!vec) return;
+        const rLen = Math.sqrt(rule.xDir**2 + rule.yDir**2);
+        const dot  = (vec.nx * rule.xDir/rLen) + (vec.ny * rule.yDir/rLen);
+        if (dot < 0.3) score -= 6;
+    });
+    return Math.max(0, score);
+}
+
+document.getElementById('score-btn').onclick = async () => {
+    if (!hasDrawn) { document.getElementById('error-log').textContent = '글자를 먼저 써주세요.'; return; }
+    if (isProcessing) return;
+
+    isProcessing = true;
+    const btn = document.getElementById('score-btn');
+    btn.disabled = true;
+    document.getElementById('btn-text').textContent = '채점 중...';
+    document.getElementById('spinner').classList.add('on');
+    document.getElementById('error-log').textContent = '';
+
+    // 로딩 UI 표시
+    document.getElementById('empty-icon').textContent = '🤖';
+    document.getElementById('empty-icon').style.fontSize = '26px';
+    document.getElementById('empty-text').innerHTML = 'AI가 채점하고 있어요';
+    document.getElementById('empty-state').style.display = 'flex';
+    document.getElementById('result-view').classList.remove('on');
+
+    // 단계별 메시지 + 프로그레스 바 시작
+    const steps = ['step-1','step-2','step-3','step-4'];
+    const barFill = document.getElementById('loading-bar-fill');
+    const barWrap = document.getElementById('loading-bar-wrap');
+    const stepsEl = document.getElementById('loading-steps');
+    stepsEl.style.display = 'flex';
+    barWrap.style.display = 'block';
+    barFill.style.width = '0%';
+
+    let stepIndex = 0;
+    const stepDurations = [3000, 5000, 4000, 99999]; // 마지막은 응답 올 때까지 유지
+    const barTargets = [20, 45, 70, 90];
+
+    function activateStep(i) {
+        // 이전 스텝 done 처리
+        if (i > 0) {
+            document.getElementById(steps[i-1]).className = 'loading-step done';
+            document.getElementById(steps[i-1]).querySelector('.step-icon').textContent = '✅';
+        }
+        if (i < steps.length) {
+            document.getElementById(steps[i]).className = 'loading-step active';
+            barFill.style.width = barTargets[i] + '%';
+        }
+    }
+
+    activateStep(0);
+    const stepTimers = [];
+    let elapsed = 0;
+    for (let i = 1; i < steps.length; i++) {
+        elapsed += stepDurations[i-1];
+        const t = setTimeout(() => activateStep(i), elapsed);
+        stepTimers.push(t);
+    }
+
+    const strokeOrderScore = scoreStrokeOrder();
+    const imgB64 = getImageData();
+
+    try {
+        const res = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target: current.char, imageData: imgB64 })
+        });
+        if (!res.ok) throw new Error('서버 오류');
+        const data = await res.json();
+
+        // 모든 스텝 완료 처리
+        stepTimers.forEach(t => clearTimeout(t));
+        steps.forEach((s, i) => {
+            const el = document.getElementById(s);
+            el.className = 'loading-step done';
+            el.querySelector('.step-icon').textContent = '✅';
+        });
+        barFill.style.width = '100%';
+
+        const r = {
+            total: data.score,
+            grade: data.score >= 90 ? 'A' : data.score >= 80 ? 'B' : data.score >= 70 ? 'C' : data.score >= 60 ? 'D' : 'E',
+            scores: {
+                '형태정확성': data.형태정확성 ?? 0,
+                '필순':       strokeOrderScore,
+                '획방향':     data.획방향 ?? 0,
+                '끝맺음':     data.끝맺음 ?? 0,
+                '균형비율':   data.균형비율 ?? 0,
+            },
+            overall: data.feedback,
+        };
+        charScores[current.char] = r;
+
+        // 잠깐 완료 표시 후 결과 보여주기
+        setTimeout(() => showResult(r), 500);
+
+    } catch(err) {
+        stepTimers.forEach(t => clearTimeout(t));
+        document.getElementById('error-log').textContent = '연결이 지연되고 있습니다. 다시 시도해주세요.';
+    } finally {
+        isProcessing = false;
+        btn.disabled = false;
+        document.getElementById('btn-text').textContent = '채점하기';
+        document.getElementById('spinner').classList.remove('on');
+        document.getElementById('empty-icon').textContent = '?';
+        document.getElementById('empty-icon').style.fontSize = '';
+        document.getElementById('empty-text').innerHTML = '히라가나를 작성한 후<br>채점 버튼을 눌러주세요.';
+        stepsEl.style.display = 'none';
+        barWrap.style.display = 'none';
+        barFill.style.width = '0%';
+        steps.forEach(s => { document.getElementById(s).className = 'loading-step'; });
+    }
+};
+
+document.getElementById('clear-btn').onclick = () => {
+    clearCanvas();
+    resetResult();
+};
+
+function getImageData() {
+    const dc = document.getElementById('drawing-canvas');
+    const tmp = document.createElement('canvas');
+    tmp.width = 300; tmp.height = 300;
+    const tCtx = tmp.getContext('2d');
+    tCtx.fillStyle = 'white';
+    tCtx.fillRect(0, 0, 300, 300);
+    tCtx.drawImage(dc, 0, 0, 300, 300);
+    return tmp.toDataURL('image/jpeg', 0.7).split(',')[1];
+}
+
+function showResult(r) {
+    document.getElementById('empty-state').style.display = 'none';
+    const rv = document.getElementById('result-view');
+    rv.classList.add('on');
+
+    const gradeEl = document.getElementById('grade-el');
+    gradeEl.textContent = r.grade;
+    gradeEl.className   = 'grade-letter ' + r.grade;
+    document.getElementById('score-el').textContent = r.total + ' / 100';
+
+    const badge = document.getElementById('badge-' + current.char);
+    if (badge) {
+        badge.textContent = r.total + '점';
+        badge.className = 'score-badge visible grade-' + r.grade.toLowerCase();
+    }
+
+    const rubrics = [
+        { name: '형태 정확성', key: '형태정확성', max: 35, color: '#2b5aad' },
+        { name: '필순',        key: '필순',       max: 25, color: '#c9a84c' },
+        { name: '획 방향',     key: '획방향',     max: 20, color: '#619bd1' },
+        { name: '끝맺음',      key: '끝맺음',     max: 10, color: '#3a9e72' },
+        { name: '균형·비율',   key: '균형비율',   max: 10, color: '#f0a500' },
+    ];
+    document.getElementById('rubric-el').innerHTML = rubrics.map(rb => {
+        const sc  = r.scores?.[rb.key] ?? 0;
+        const pct = Math.min(100, Math.round((sc / rb.max) * 100));
+        return `<div class="rubric-item">
+          <div class="rubric-row">
+            <span class="rubric-name">${rb.name}</span>
+            <span class="rubric-val">${sc} / ${rb.max}</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${rb.color}"></div></div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('feedback-el').textContent = r.overall || '';
+}
+
+function resetResult() {
+    document.getElementById('empty-state').style.display = 'flex';
+    document.getElementById('result-view').classList.remove('on');
+}
+</script>
+</body>
+</html>
