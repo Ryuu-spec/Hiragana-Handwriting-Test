@@ -183,6 +183,54 @@
         }
         .spinner.on { display: block; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .loading-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 8px;
+            width: 100%;
+            max-width: 240px;
+        }
+        .loading-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #a0b4cc;
+            opacity: 0;
+            transition: opacity 0.4s, color 0.4s;
+        }
+        .loading-step.active {
+            opacity: 1;
+            color: #5b8fc9;
+            animation: fadeInUp 0.4s ease;
+            font-weight: 600;
+        }
+        .loading-step.done {
+            opacity: 1;
+            color: #7dc67e;
+        }
+        .step-icon { font-size: 15px; width: 20px; text-align: center; }
+        .loading-bar-wrap {
+            width: 100%;
+            max-width: 240px;
+            height: 4px;
+            background: #dce8f5;
+            border-radius: 99px;
+            margin-top: 14px;
+            overflow: hidden;
+        }
+        .loading-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #619bd1, #7dc67e);
+            border-radius: 99px;
+            transition: width 0.8s ease;
+        }
 
         /* ── RIGHT PANEL ── */
         .right-panel {
@@ -356,6 +404,15 @@
             <div class="empty-state" id="empty-state">
                 <div class="empty-circle" id="empty-icon">?</div>
                 <div class="empty-text" id="empty-text">히라가나를 작성한 후<br>채점 버튼을 눌러주세요.</div>
+                <div class="loading-steps" id="loading-steps" style="display:none;">
+                    <div class="loading-step" id="step-1"><span class="step-icon">✏️</span> 획 구조 분석 중...</div>
+                    <div class="loading-step" id="step-2"><span class="step-icon">🔍</span> 필순·방향 검토 중...</div>
+                    <div class="loading-step" id="step-3"><span class="step-icon">⚖️</span> 균형·비율 측정 중...</div>
+                    <div class="loading-step" id="step-4"><span class="step-icon">📊</span> 최종 점수 계산 중...</div>
+                </div>
+                <div class="loading-bar-wrap" id="loading-bar-wrap" style="display:none;">
+                    <div class="loading-bar-fill" id="loading-bar-fill"></div>
+                </div>
             </div>
 
             <div class="result-view" id="result-view">
@@ -553,12 +610,46 @@ document.getElementById('score-btn').onclick = async () => {
     document.getElementById('spinner').classList.add('on');
     document.getElementById('error-log').textContent = '';
 
-    // 로딩 상태를 empty-state에 표시
-    document.getElementById('empty-icon').textContent = '✦';
-    document.getElementById('empty-icon').style.fontSize = '22px';
-    document.getElementById('empty-text').innerHTML = 'AI가 분석 중입니다...<br><span style="font-size:11px;color:#c8d9ee">Gemini 분석에 5~10초 소요됩니다</span>';
+    // 로딩 UI 표시
+    document.getElementById('empty-icon').textContent = '🤖';
+    document.getElementById('empty-icon').style.fontSize = '26px';
+    document.getElementById('empty-text').innerHTML = 'AI가 채점하고 있어요';
     document.getElementById('empty-state').style.display = 'flex';
     document.getElementById('result-view').classList.remove('on');
+
+    // 단계별 메시지 + 프로그레스 바 시작
+    const steps = ['step-1','step-2','step-3','step-4'];
+    const barFill = document.getElementById('loading-bar-fill');
+    const barWrap = document.getElementById('loading-bar-wrap');
+    const stepsEl = document.getElementById('loading-steps');
+    stepsEl.style.display = 'flex';
+    barWrap.style.display = 'block';
+    barFill.style.width = '0%';
+
+    let stepIndex = 0;
+    const stepDurations = [3000, 5000, 4000, 99999]; // 마지막은 응답 올 때까지 유지
+    const barTargets = [20, 45, 70, 90];
+
+    function activateStep(i) {
+        // 이전 스텝 done 처리
+        if (i > 0) {
+            document.getElementById(steps[i-1]).className = 'loading-step done';
+            document.getElementById(steps[i-1]).querySelector('.step-icon').textContent = '✅';
+        }
+        if (i < steps.length) {
+            document.getElementById(steps[i]).className = 'loading-step active';
+            barFill.style.width = barTargets[i] + '%';
+        }
+    }
+
+    activateStep(0);
+    const stepTimers = [];
+    let elapsed = 0;
+    for (let i = 1; i < steps.length; i++) {
+        elapsed += stepDurations[i-1];
+        const t = setTimeout(() => activateStep(i), elapsed);
+        stepTimers.push(t);
+    }
 
     const strokeOrderScore = scoreStrokeOrder();
     const imgB64 = getImageData();
@@ -571,6 +662,15 @@ document.getElementById('score-btn').onclick = async () => {
         });
         if (!res.ok) throw new Error('서버 오류');
         const data = await res.json();
+
+        // 모든 스텝 완료 처리
+        stepTimers.forEach(t => clearTimeout(t));
+        steps.forEach((s, i) => {
+            const el = document.getElementById(s);
+            el.className = 'loading-step done';
+            el.querySelector('.step-icon').textContent = '✅';
+        });
+        barFill.style.width = '100%';
 
         const r = {
             total: data.score,
@@ -585,8 +685,12 @@ document.getElementById('score-btn').onclick = async () => {
             overall: data.feedback,
         };
         charScores[current.char] = r;
-        showResult(r);
+
+        // 잠깐 완료 표시 후 결과 보여주기
+        setTimeout(() => showResult(r), 500);
+
     } catch(err) {
+        stepTimers.forEach(t => clearTimeout(t));
         document.getElementById('error-log').textContent = '연결이 지연되고 있습니다. 다시 시도해주세요.';
     } finally {
         isProcessing = false;
@@ -596,6 +700,10 @@ document.getElementById('score-btn').onclick = async () => {
         document.getElementById('empty-icon').textContent = '?';
         document.getElementById('empty-icon').style.fontSize = '';
         document.getElementById('empty-text').innerHTML = '히라가나를 작성한 후<br>채점 버튼을 눌러주세요.';
+        stepsEl.style.display = 'none';
+        barWrap.style.display = 'none';
+        barFill.style.width = '0%';
+        steps.forEach(s => { document.getElementById(s).className = 'loading-step'; });
     }
 };
 
