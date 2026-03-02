@@ -73,8 +73,11 @@
         }
         .score-badge.grade-a { background: #619bd1; }
         .score-badge.grade-b { background: #3a9e72; }
-        .score-badge.grade-c { background: #f0a500; }
-        .score-badge.grade-d { background: #e05555; }
+        .score-badge.grade-c { background: #7dc67e; }
+        .score-badge.grade-d { background: #f0a500; }
+        .score-badge.grade-e { background: #e07a2f; }
+        .score-badge.grade-f { background: #e05555; }
+        .score-badge.grade-g { background: #9b2335; }
 
         .char-btn {
             width: 100%;
@@ -260,8 +263,11 @@
         }
         .grade-letter.A { color: #619bd1; }
         .grade-letter.B { color: #3a9e72; }
-        .grade-letter.C { color: #f0a500; }
-        .grade-letter.D { color: #e05555; }
+        .grade-letter.C { color: #7dc67e; }
+        .grade-letter.D { color: #f0a500; }
+        .grade-letter.E { color: #e07a2f; }
+        .grade-letter.F { color: #e05555; }
+        .grade-letter.G { color: #9b2335; }
         .score-num {
             font-family: 'DM Mono', monospace;
             font-size: 13px; color: #94a3b8; margin-top: 2px;
@@ -572,7 +578,7 @@ document.getElementById('score-btn').onclick = async () => {
 
         const r = {
             total: data.score,
-            grade: data.score >= 90 ? 'A' : data.score >= 80 ? 'B' : data.score >= 70 ? 'C' : 'D',
+            grade: data.score >= 90 ? 'A' : data.score >= 80 ? 'B' : data.score >= 70 ? 'C' : data.score >= 60 ? 'D' : data.score >= 50 ? 'E' : data.score >= 40 ? 'F' : 'G',
             scores: {
                 '형태정확성': data.형태정확성 ?? 0,
                 '필순':       strokeOrderScore,
