@@ -585,18 +585,19 @@ function analyzeStroke(pts) {
 function scoreStrokeOrder() {
     const rules    = STROKE_RULES[current.char];
     const expected = rules ? rules.length : current.strokes;
+    const MAX      = 20;
     if (strokes.length !== expected) {
-        return Math.max(0, 25 - Math.abs(strokes.length - expected) * 8);
+        return Math.max(0, MAX - Math.abs(strokes.length - expected) * 7);
     }
-    if (!rules) return 25;
-    let score = 25;
+    if (!rules) return MAX;
+    let score = MAX;
     strokes.forEach((pts, i) => {
         const rule = rules[i];
         const vec  = analyzeStroke(pts);
         if (!vec) return;
         const rLen = Math.sqrt(rule.xDir**2 + rule.yDir**2);
         const dot  = (vec.nx * rule.xDir/rLen) + (vec.ny * rule.yDir/rLen);
-        if (dot < 0.3) score -= 6;
+        if (dot < 0.3) score -= 5;
     });
     return Math.max(0, score);
 }
