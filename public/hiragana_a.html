@@ -9,7 +9,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body, html {
-            overflow: hidden;
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #f1f7ff;
             height: 100%;
@@ -21,6 +20,8 @@
             display: flex;
             height: 100vh;
             width: 100%;
+            align-items: stretch;
+            overflow: hidden;
         }
 
         /* ── LEFT PANEL ── */
@@ -111,6 +112,8 @@
 
         .canvas-wrap {
             flex: 1;
+            height: 0; /* flex가 실제 높이를 계산하도록 */
+            min-height: 400px;
             position: relative;
             background: #ffffff;
             border: 2px solid #e8f0fe;
@@ -237,12 +240,17 @@
             background: #f1f7ff;
             border-left: 1px solid #e2eeff;
             gap: 16px;
-            overflow: hidden;
-            min-height: 0;
+            overflow-y: auto;
+            /* 얇은 스크롤바 */
+            scrollbar-width: thin;
+            scrollbar-color: #c8d9ee transparent;
         }
+        .right-panel::-webkit-scrollbar { width: 4px; }
+        .right-panel::-webkit-scrollbar-track { background: transparent; }
+        .right-panel::-webkit-scrollbar-thumb { background: #c8d9ee; border-radius: 99px; }
 
         .right-charbar-mirror {
-            height: 100px;
+            min-height: 100px;
             flex-shrink: 0;
         }
 
@@ -258,6 +266,7 @@
 
         .result-card {
             flex: 1;
+            min-height: 400px;
             background: white;
             border: 2px solid #e8f0fe;
             border-radius: 24px;
@@ -266,12 +275,11 @@
             flex-direction: column;
             align-items: center;
             overflow-y: auto;
-            min-height: 0;
         }
 
         .empty-state {
-            flex: 1;
             width: 100%;
+            padding: 40px 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -290,12 +298,12 @@
             text-align: center; line-height: 1.8;
         }
 
-        .result-view { display: none; width: 100%; padding: 20px 22px; }
-        .result-view.on { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+        .result-view { display: none; width: 100%; padding: 16px 18px 18px; }
+        .result-view.on { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
         .grade-display { text-align: center; }
         .grade-letter {
-            font-size: 54px;
+            font-size: 44px;
             font-weight: 900;
             line-height: 1;
             font-family: 'DM Mono', monospace;
@@ -310,28 +318,31 @@
             font-size: 13px; color: #94a3b8; margin-top: 2px;
         }
 
-        .rubric-list { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .rubric-list { width: 100%; display: flex; flex-direction: column; gap: 6px; }
         .rubric-item {}
-        .rubric-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .rubric-name { font-size: 12px; font-weight: 700; color: #475569; }
-        .rubric-val { font-family: 'DM Mono', monospace; font-size: 11px; color: #94a3b8; }
-        .bar-bg { height: 6px; background: #e8f0fe; border-radius: 3px; overflow: hidden; }
+        .rubric-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .rubric-name { font-size: 11px; font-weight: 700; color: #475569; }
+        .rubric-val { font-family: 'DM Mono', monospace; font-size: 10px; color: #94a3b8; }
+        .bar-bg { height: 5px; background: #e8f0fe; border-radius: 3px; overflow: hidden; }
         .bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
 
         .feedback-section { width: 100%; }
         .feedback-label {
             font-size: 9px; font-weight: 900; color: #619bd1;
             letter-spacing: 0.3em; text-transform: uppercase;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .feedback-card {
             background: #f8fbff;
             border-left: 3px solid #619bd1;
             border-radius: 0 12px 12px 0;
-            padding: 12px 14px;
-            font-size: 13px;
-            line-height: 1.7;
+            padding: 10px 12px;
+            font-size: 12px;
+            line-height: 1.75;
             color: #475569;
+            word-break: keep-all;
+            overflow-wrap: break-word;
+            white-space: pre-line;
         }
 
         .right-btnrow-mirror {
