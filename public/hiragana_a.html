@@ -33,7 +33,6 @@
             gap: 16px;
         }
 
-        /* 문자 선택 탭 */
         .char-bar {
             display: flex;
             gap: 10px;
@@ -101,7 +100,6 @@
             box-shadow: 0 8px 20px rgba(97,155,209,0.3);
         }
 
-        /* 레이블 공통 */
         .board-label {
             text-align: center;
             font-size: 9px;
@@ -111,7 +109,6 @@
             text-transform: uppercase;
         }
 
-        /* 캔버스 */
         .canvas-wrap {
             flex: 1;
             position: relative;
@@ -134,7 +131,6 @@
             height: 100%;
         }
 
-        /* 버튼 행 */
         .btn-row {
             display: flex;
             gap: 12px;
@@ -245,8 +241,6 @@
             min-height: 0;
         }
 
-        /* char-bar 영역 높이 미러:
-           padding-top(10) + char-item padding-top(28) + char-btn(62) = 100px */
         .right-charbar-mirror {
             height: 100px;
             flex-shrink: 0;
@@ -262,7 +256,6 @@
             flex-shrink: 0;
         }
 
-        /* canvas-wrap과 동일하게 flex:1 */
         .result-card {
             flex: 1;
             background: white;
@@ -276,7 +269,6 @@
             min-height: 0;
         }
 
-        /* 빈 상태 — 카드 정중앙 */
         .empty-state {
             flex: 1;
             width: 100%;
@@ -298,7 +290,6 @@
             text-align: center; line-height: 1.8;
         }
 
-        /* 결과 뷰 */
         .result-view { display: none; width: 100%; padding: 20px 22px; }
         .result-view.on { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 
@@ -319,7 +310,6 @@
             font-size: 13px; color: #94a3b8; margin-top: 2px;
         }
 
-        /* 루브릭 바 */
         .rubric-list { width: 100%; display: flex; flex-direction: column; gap: 8px; }
         .rubric-item {}
         .rubric-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
@@ -328,7 +318,6 @@
         .bar-bg { height: 6px; background: #e8f0fe; border-radius: 3px; overflow: hidden; }
         .bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
 
-        /* 피드백 */
         .feedback-section { width: 100%; }
         .feedback-label {
             font-size: 9px; font-weight: 900; color: #619bd1;
@@ -345,12 +334,11 @@
             color: #475569;
         }
 
-        /* ③ error log */
         .right-btnrow-mirror {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: calc(16px * 2 + 21px); /* padding 상하 + 글씨 */
+            min-height: calc(16px * 2 + 21px);
         }
 
         .error-log {
@@ -372,21 +360,13 @@
 <body>
 <div class="app-container">
 
-    <!-- 왼쪽: 캔버스 -->
     <section class="left-panel">
-        <!-- ① char-bar -->
         <div id="char-bar" class="char-bar jp-font"></div>
-
-        <!-- board-label -->
         <div class="board-label">Practice Board</div>
-
-        <!-- ② canvas-wrap -->
         <div class="canvas-wrap">
             <canvas id="guide-canvas"></canvas>
             <canvas id="drawing-canvas"></canvas>
         </div>
-
-        <!-- ③ btn-row -->
         <div class="btn-row">
             <button class="btn-clear" id="clear-btn">다시 쓰기</button>
             <button class="btn-score" id="score-btn">
@@ -396,12 +376,10 @@
         </div>
     </section>
 
-    <!-- 오른쪽: 결과 -->
     <section class="right-panel">
         <div class="right-charbar-mirror"></div>
         <div class="panel-label">AI Analysis Result</div>
 
-        <!-- ② canvas-wrap 위치 미러 — 결과 카드 -->
         <div class="result-card">
             <div class="empty-state" id="empty-state">
                 <div class="empty-circle" id="empty-icon">?</div>
@@ -430,7 +408,6 @@
             </div>
         </div>
 
-        <!-- ③ btn-row 높이 미러 + error -->
         <div class="right-btnrow-mirror">
             <div class="error-log" id="error-log"></div>
         </div>
@@ -441,9 +418,202 @@
 <script>
 const SERVER_URL = "https://hiragana-backend.vercel.app/api/score";
 
-const CHARS = [{"char": "あ", "romaji": "a", "strokes": 3}, {"char": "い", "romaji": "i", "strokes": 2}, {"char": "う", "romaji": "u", "strokes": 2}, {"char": "え", "romaji": "e", "strokes": 2}, {"char": "お", "romaji": "o", "strokes": 3}];
+const CHARS = [
+    {"char": "あ", "romaji": "a", "strokes": 3},
+    {"char": "い", "romaji": "i", "strokes": 2},
+    {"char": "う", "romaji": "u", "strokes": 2},
+    {"char": "え", "romaji": "e", "strokes": 2},
+    {"char": "お", "romaji": "o", "strokes": 3}
+];
 
-const STROKE_RULES = {"あ": [{"label": "1획", "xDir": 1, "yDir": 0, "startSide": "top-left"}, {"label": "2획", "xDir": 0, "yDir": 1, "startSide": "top-center"}, {"label": "3획", "xDir": -0.5, "yDir": 0.5, "startSide": "top-right"}], "い": [{"label": "1획", "xDir": 0.2, "yDir": 1, "startSide": "top-left"}, {"label": "2획", "xDir": -0.3, "yDir": 1, "startSide": "top-right"}], "う": [{"label": "1획", "xDir": 0.5, "yDir": 0.2, "startSide": "top-center"}, {"label": "2획", "xDir": -0.5, "yDir": 0.5, "startSide": "top-right"}], "え": [{"label": "1획", "xDir": 1, "yDir": 0, "startSide": "top-left"}, {"label": "2획", "xDir": -0.3, "yDir": 1, "startSide": "top-center"}], "お": [{"label": "1획", "xDir": 1, "yDir": 0, "startSide": "top-left"}, {"label": "2획", "xDir": 0, "yDir": 1, "startSide": "top-center"}, {"label": "3획", "xDir": -0.5, "yDir": 0.5, "startSide": "top-right"}]};
+// ============================================================
+// STROKE_RULES v2
+// xDir/yDir: 획의 전체적인 진행 방향 벡터 (정규화 전)
+//   - 원형·루프 획은 isLoop:true로 표시 → 방향 검사 대신 위치만 검사
+// startRegion: 획 시작점이 캔버스 어느 영역에 있어야 하는지
+//   - "top-left" | "top-center" | "top-right" | "center" | "center-left" 등
+//   - 캔버스를 3x3 격자로 나눠 판단
+// minLength: 획의 최소 길이 비율 (캔버스 대각선 대비, 0~1)
+//   - 너무 짧은 획(점 처리) 걸러내기 위함
+// ============================================================
+const STROKE_RULES = {
+    "あ": [
+        // 1획: 좌상단에서 오른쪽으로 가로선 → 끝에서 아래왼쪽 갈고리
+        { label: "1획", xDir: 1,    yDir: 0.1,  startRegion: "top-left",   isLoop: false, minLength: 0.15 },
+        // 2획: 우측 상단에서 아래로 내려오다 왼쪽 아래로 크게 휘는 곡선
+        { label: "2획", xDir: -0.3, yDir: 1,    startRegion: "top-center", isLoop: false, minLength: 0.3  },
+        // 3획: 반시계 방향 타원 루프 — 방향보다 위치·크기가 중요
+        { label: "3획", xDir: 0,    yDir: 0,    startRegion: "center",     isLoop: true,  minLength: 0.2  },
+    ],
+    "い": [
+        // 1획: 오른쪽 아래 대각선 방향으로 기울어지며 내려옴 (수직 아님)
+        { label: "1획", xDir: 0.35, yDir: 1,    startRegion: "top-left",   isLoop: false, minLength: 0.25 },
+        // 2획: 오른쪽에서 짧게 아래로 내려오며 왼쪽 아래 곡선 마무리
+        { label: "2획", xDir: -0.2, yDir: 1,    startRegion: "top-right",  isLoop: false, minLength: 0.15 },
+    ],
+    "う": [
+        // 1획: 상단 중앙의 짧은 우하향 점 사선
+        { label: "1획", xDir: 0.5,  yDir: 0.5,  startRegion: "top-center", isLoop: false, minLength: 0.05 },
+        // 2획: 위로 살짝 올라가다 U자로 내려오며 왼쪽 위로 끝올림
+        { label: "2획", xDir: -0.3, yDir: 0.5,  startRegion: "center",     isLoop: false, minLength: 0.3  },
+    ],
+    "え": [
+        // 1획: 상단 짧은 우하향 사선 (수평선 아님 — xDir보다 yDir이 더 있음)
+        { label: "1획", xDir: 0.6,  yDir: 0.4,  startRegion: "top-left",   isLoop: false, minLength: 0.08 },
+        // 2획: 좌→우 가로 후 왼쪽 아래 꺾임 후 파도 마무리 → 전체 방향은 아래 왼쪽
+        { label: "2획", xDir: -0.2, yDir: 0.8,  startRegion: "top-center", isLoop: false, minLength: 0.35 },
+    ],
+    "お": [
+        // 1획: 수평 가로선
+        { label: "1획", xDir: 1,    yDir: 0.05, startRegion: "top-left",   isLoop: false, minLength: 0.2  },
+        // 2획: 세로로 내려오다 왼쪽으로 돌아 타원 루프
+        { label: "2획", xDir: 0,    yDir: 0,    startRegion: "top-center", isLoop: true,  minLength: 0.3  },
+        // 3획: 오른쪽 위의 짧은 사선
+        { label: "3획", xDir: 0.5,  yDir: 0.5,  startRegion: "top-right",  isLoop: false, minLength: 0.05 },
+    ],
+};
+
+// 캔버스를 3x3 격자로 나눠 startRegion 판정
+function getRegion(x, y, canvasW, canvasH) {
+    const col = x < canvasW * 0.38 ? 'left' : x < canvasW * 0.62 ? 'center' : 'right';
+    const row = y < canvasH * 0.38 ? 'top'  : y < canvasH * 0.62 ? 'center' : 'bottom';
+    return row === 'center' && col === 'center' ? 'center' : `${row}-${col}`;
+}
+
+// 획의 대표 방향 벡터 계산
+// - 단순 시작→끝 벡터 대신 전체 포인트의 주성분 방향을 사용
+function getStrokeDirection(pts) {
+    if (pts.length < 2) return null;
+    // 분산이 큰 방향(PCA 대신 간소화: 시작~끝 + 중간 샘플 평균)
+    const samples = [0, Math.floor(pts.length * 0.25), Math.floor(pts.length * 0.5),
+                     Math.floor(pts.length * 0.75), pts.length - 1];
+    let dx = 0, dy = 0;
+    for (let i = 1; i < samples.length; i++) {
+        dx += pts[samples[i]].x - pts[samples[i-1]].x;
+        dy += pts[samples[i]].y - pts[samples[i-1]].y;
+    }
+    const len = Math.sqrt(dx*dx + dy*dy);
+    if (len < 1) return null;
+    return { nx: dx/len, ny: dy/len };
+}
+
+// 획의 총 길이 (픽셀)
+function getStrokeLength(pts) {
+    let len = 0;
+    for (let i = 1; i < pts.length; i++) {
+        const dx = pts[i].x - pts[i-1].x;
+        const dy = pts[i].y - pts[i-1].y;
+        len += Math.sqrt(dx*dx + dy*dy);
+    }
+    return len;
+}
+
+// ============================================================
+// scoreStrokeOrder v2
+// 항목별 점수:
+//   획 개수 일치 여부  : 최대 8점
+//   각 획 시작 위치    : 획당 최대 4점
+//   각 획 방향        : 획당 최대 4점 (루프 획은 면제)
+//   획 길이 최소 충족  : 획당 최대 2점
+// 총 20점 만점으로 정규화
+// ============================================================
+function scoreStrokeOrder() {
+    const rules   = STROKE_RULES[current.char];
+    const MAX     = 20;
+
+    if (!rules) {
+        // 규칙 없으면 획 수만 검사
+        const expected = current.strokes;
+        if (strokes.length === expected) return MAX;
+        return Math.max(0, MAX - Math.abs(strokes.length - expected) * 5);
+    }
+
+    const expected = rules.length;
+    const dc = document.getElementById('drawing-canvas');
+    const W  = dc.width;
+    const H  = dc.height;
+    const diagonal = Math.sqrt(W*W + H*H);
+
+    // 획 수 틀리면 큰 감점 후 조기 반환
+    if (strokes.length !== expected) {
+        const diff = Math.abs(strokes.length - expected);
+        return Math.max(0, MAX - diff * 6);
+    }
+
+    let rawScore = 0;
+    const perStrokeMax = { count: 8 / expected, pos: 4, dir: 4, len: 2 };
+    // 획 수 일치 기본 점수
+    rawScore += 8;
+
+    strokes.forEach((pts, i) => {
+        const rule = rules[i];
+        if (!rule || pts.length < 2) return;
+
+        // ① 시작 위치 검사
+        const startX = pts[0].x;
+        const startY = pts[0].y;
+        const actualRegion = getRegion(startX, startY, W, H);
+
+        // region 매칭: 완전 일치 4점, 인접(행 또는 열 하나 차이) 2점, 불일치 0점
+        const regionScore = scoreRegion(actualRegion, rule.startRegion);
+        rawScore += regionScore; // max 4
+
+        // ② 획 길이 검사
+        const strokeLen = getStrokeLength(pts);
+        const strokeRatio = strokeLen / diagonal;
+        if (strokeRatio >= rule.minLength) {
+            rawScore += 2; // 최소 길이 충족
+        } else {
+            rawScore += Math.round((strokeRatio / rule.minLength) * 2);
+        }
+
+        // ③ 방향 검사 (루프 획은 면제)
+        if (!rule.isLoop) {
+            const vec = getStrokeDirection(pts);
+            if (vec) {
+                const rLen = Math.sqrt(rule.xDir**2 + rule.yDir**2);
+                if (rLen > 0.01) {
+                    const dot = (vec.nx * rule.xDir/rLen) + (vec.ny * rule.yDir/rLen);
+                    // dot: 1=완전 일치, 0=직각, -1=반대
+                    // 0.7 이상 → 4점, 0.4~0.7 → 2점, 0~0.4 → 1점, 음수 → 0점
+                    if      (dot >= 0.7) rawScore += 4;
+                    else if (dot >= 0.4) rawScore += 2;
+                    else if (dot >= 0.0) rawScore += 1;
+                    // 음수(반대 방향)는 0점
+                }
+            }
+        } else {
+            // 루프 획은 방향 만점 부여 (위치와 크기로 이미 판단)
+            rawScore += 4;
+        }
+    });
+
+    // 최대 가능 점수: 8 + (4+2+4)*획수
+    const maxRaw = 8 + (4 + 2 + 4) * expected;
+    return Math.round(Math.min(MAX, (rawScore / maxRaw) * MAX));
+}
+
+// startRegion 매칭 점수 (0~4)
+function scoreRegion(actual, expected) {
+    if (actual === expected) return 4;
+
+    // 인접 판단: row 또는 col 중 하나만 다른 경우
+    const rows = { top: 0, center: 1, bottom: 2 };
+    const cols = { left: 0, center: 1, right: 2 };
+
+    function parse(r) {
+        if (r === 'center') return { row: 1, col: 1 };
+        const parts = r.split('-');
+        if (parts.length === 1) return { row: rows[parts[0]] ?? 1, col: 1 };
+        return { row: rows[parts[0]] ?? 1, col: cols[parts[1]] ?? 1 };
+    }
+
+    const a = parse(actual);
+    const e = parse(expected);
+    const dist = Math.abs(a.row - e.row) + Math.abs(a.col - e.col);
+    if (dist === 1) return 2; // 인접
+    return 0;                 // 멀리 벗어남
+}
 
 let current      = CHARS[0];
 let strokes      = [];
@@ -574,34 +744,6 @@ function drawGuide() {
     ctx.setLineDash([]);
 }
 
-function analyzeStroke(pts) {
-    if (pts.length < 2) return null;
-    const dx = pts[pts.length-1].x - pts[0].x;
-    const dy = pts[pts.length-1].y - pts[0].y;
-    const len = Math.sqrt(dx*dx + dy*dy);
-    return { nx: dx/len, ny: dy/len, startX: pts[0].x, startY: pts[0].y };
-}
-
-function scoreStrokeOrder() {
-    const rules    = STROKE_RULES[current.char];
-    const expected = rules ? rules.length : current.strokes;
-    const MAX      = 20;
-    if (strokes.length !== expected) {
-        return Math.max(0, MAX - Math.abs(strokes.length - expected) * 7);
-    }
-    if (!rules) return MAX;
-    let score = MAX;
-    strokes.forEach((pts, i) => {
-        const rule = rules[i];
-        const vec  = analyzeStroke(pts);
-        if (!vec) return;
-        const rLen = Math.sqrt(rule.xDir**2 + rule.yDir**2);
-        const dot  = (vec.nx * rule.xDir/rLen) + (vec.ny * rule.yDir/rLen);
-        if (dot < 0.3) score -= 5;
-    });
-    return Math.max(0, score);
-}
-
 document.getElementById('score-btn').onclick = async () => {
     if (!hasDrawn) { document.getElementById('error-log').textContent = '글자를 먼저 써주세요.'; return; }
     if (isProcessing) return;
@@ -613,14 +755,12 @@ document.getElementById('score-btn').onclick = async () => {
     document.getElementById('spinner').classList.add('on');
     document.getElementById('error-log').textContent = '';
 
-    // 로딩 UI 표시
     document.getElementById('empty-icon').textContent = '🤖';
     document.getElementById('empty-icon').style.fontSize = '26px';
     document.getElementById('empty-text').innerHTML = 'AI가 채점하고 있어요';
     document.getElementById('empty-state').style.display = 'flex';
     document.getElementById('result-view').classList.remove('on');
 
-    // 단계별 메시지 + 프로그레스 바 시작
     const steps = ['step-1','step-2','step-3','step-4'];
     const barFill = document.getElementById('loading-bar-fill');
     const barWrap = document.getElementById('loading-bar-wrap');
@@ -630,11 +770,10 @@ document.getElementById('score-btn').onclick = async () => {
     barFill.style.width = '0%';
 
     let stepIndex = 0;
-    const stepDurations = [3000, 5000, 4000, 99999]; // 마지막은 응답 올 때까지 유지
+    const stepDurations = [3000, 5000, 4000, 99999];
     const barTargets = [20, 45, 70, 90];
 
     function activateStep(i) {
-        // 이전 스텝 done 처리
         if (i > 0) {
             document.getElementById(steps[i-1]).className = 'loading-step done';
             document.getElementById(steps[i-1]).querySelector('.step-icon').textContent = '✅';
@@ -654,6 +793,7 @@ document.getElementById('score-btn').onclick = async () => {
         stepTimers.push(t);
     }
 
+    // ★ 필순 점수를 클라이언트에서 계산 (stroke 데이터 활용)
     const strokeOrderScore = scoreStrokeOrder();
     const imgB64 = getImageData();
 
@@ -661,26 +801,34 @@ document.getElementById('score-btn').onclick = async () => {
         const res = await fetch(SERVER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target: current.char, imageData: imgB64 })
+            body: JSON.stringify({
+                target:    current.char,
+                imageData: imgB64,
+                // 백엔드에도 stroke 메타 정보 전달 (향후 활용 가능)
+                strokeMeta: {
+                    count: strokes.length,
+                    expected: (STROKE_RULES[current.char] || []).length || current.strokes,
+                }
+            })
         });
         if (!res.ok) throw new Error('서버 오류');
         const data = await res.json();
 
-        // 모든 스텝 완료 처리
         stepTimers.forEach(t => clearTimeout(t));
-        steps.forEach((s, i) => {
+        steps.forEach((s) => {
             const el = document.getElementById(s);
             el.className = 'loading-step done';
             el.querySelector('.step-icon').textContent = '✅';
         });
         barFill.style.width = '100%';
 
+        const total = data.score;
         const r = {
-            total: data.score,
-            grade: data.score >= 90 ? 'A' : data.score >= 80 ? 'B' : data.score >= 70 ? 'C' : data.score >= 60 ? 'D' : 'E',
+            total,
+            grade: total >= 90 ? 'A' : total >= 80 ? 'B' : total >= 70 ? 'C' : total >= 60 ? 'D' : 'E',
             scores: {
                 '형태정확성': data.형태정확성 ?? 0,
-                '필순':       strokeOrderScore,
+                '필순':       strokeOrderScore,   // ★ 클라이언트 계산값 사용
                 '획방향':     data.획방향 ?? 0,
                 '끝맺음':     data.끝맺음 ?? 0,
                 '균형비율':   data.균형비율 ?? 0,
@@ -688,8 +836,6 @@ document.getElementById('score-btn').onclick = async () => {
             overall: data.feedback,
         };
         charScores[current.char] = r;
-
-        // 잠깐 완료 표시 후 결과 보여주기
         setTimeout(() => showResult(r), 500);
 
     } catch(err) {
